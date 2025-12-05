@@ -3,167 +3,381 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador de Energía Fotovoltaica</title>
+    <title>Simulador Solar Fotovoltaico Estilo Diagrama</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #fffbe6; /* Fondo amarillo muy claro */
+            background-color: #f7f7f7; /* Fondo gris claro */
             color: #333;
         }
         .container {
-            max-width: 900px;
+            max-width: 950px;
             margin: auto;
             background: #ffffff;
             padding: 30px;
             border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            overflow: hidden; /* Para las animaciones que puedan salirse */
         }
         h1 {
-            color: #ff9900;
+            color: #4a4a4a; /* Gris oscuro para el título */
             text-align: center;
             margin-bottom: 25px;
             font-weight: 600;
         }
         h2 {
-            color: #007bff;
+            color: #007bff; /* Azul para subtítulos */
             border-bottom: 2px solid #007bff;
             padding-bottom: 5px;
             margin-top: 30px;
+            margin-bottom: 20px;
         }
 
-        /* --- Sección Visual y Animación --- */
-        .pv-section {
-            display: flex;
-            justify-content: space-around;
-            align-items: flex-start;
-            margin-bottom: 30px;
-            padding: 20px;
-            background-color: #fcf8e3;
-            border-radius: 8px;
-        }
-        .visual-container {
-            width: 50%;
-            height: 250px;
+        /* --- Contenedor Principal del Diagrama --- */
+        .diagram-container {
             position: relative;
-            background-color: #e0e0e0;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 2px solid #ccc;
-        }
-
-        /* Simulación del Panel Solar */
-        .solar-panel {
             width: 100%;
-            height: 100%;
-            background: repeating-linear-gradient(
-                45deg,
-                #333,
-                #333 10px,
-                #222 10px,
-                #222 20px
-            );
-            position: relative;
+            height: 450px; /* Altura ajustada para el diagrama */
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fff;
+            margin-bottom: 30px;
+            overflow: hidden; /* Muy importante para que las animaciones de electrones no se desborden */
+        }
+
+        /* --- Elementos Estáticos del Diagrama --- */
+        .sun {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: #ff9900; /* Naranja sol */
+            border-radius: 50%;
+            border: 2px solid #ff9900;
+            z-index: 10;
+        }
+        .sun::before, .sun::after { /* Rayos del sol */
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 15px;
+            background-color: #ff9900;
+            transform-origin: 50% 100%;
+            top: -15px;
+            left: 50%;
+            margin-left: -1px;
+            border-radius: 1px;
+        }
+        .sun::before { transform: rotate(45deg) translateY(-30px); }
+        .sun::after { transform: rotate(-45deg) translateY(-30px); }
+        .sun span { /* Rayos adicionales */
+            position: absolute;
+            width: 2px;
+            height: 15px;
+            background-color: #ff9900;
+            transform-origin: 50% 100%;
+            border-radius: 1px;
+        }
+        .sun span:nth-child(1) { transform: rotate(0deg) translateY(-30px); left: 50%; margin-left: -1px; top: -15px;}
+        .sun span:nth-child(2) { transform: rotate(90deg) translateX(30px); top: 50%; margin-top: -1px; right: -15px;}
+        .sun span:nth-child(3) { transform: rotate(180deg) translateY(30px); left: 50%; margin-left: -1px; bottom: -15px;}
+        .sun span:nth-child(4) { transform: rotate(270deg) translateX(-30px); top: 50%; margin-top: -1px; left: -15px;}
+        .sun span:nth-child(5) { transform: rotate(135deg) translate(20px, 20px); top: 50%; margin-left: -1px; right: -15px;} /* Diagonales */
+        .sun span:nth-child(6) { transform: rotate(-135deg) translate(-20px, 20px); top: 50%; margin-left: -1px; left: -15px;}
+        .sun span:nth-child(7) { transform: rotate(225deg) translate(-20px, -20px); bottom: -15px; left: -15px;}
+        .sun span:nth-child(8) { transform: rotate(-45deg) translate(20px, -20px); bottom: -15px; right: -15px;}
+
+
+        .label {
+            position: absolute;
+            font-size: 0.9em;
+            color: #555;
+            white-space: nowrap;
+        }
+        .label.rad { top: 120px; left: 20px; font-weight: bold; }
+        .label.panel { bottom: 10px; left: 100px; font-weight: bold; }
+        .label.celulas { top: 90px; left: 370px; font-weight: bold; }
+        .label.elect { bottom: 90px; left: 500px; font-weight: bold; }
+
+        .solar-panel-static {
+            position: absolute;
+            bottom: 80px;
+            left: 100px;
+            width: 150px;
+            height: 100px;
+            background-color: #3f51b5; /* Azul oscuro panel */
+            border: 2px solid #283593;
+            border-radius: 5px;
+            z-index: 5;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 2px;
+            padding: 2px;
+        }
+        .solar-cell-grid {
+            background-color: #283593; /* Celdas más oscuras */
+            border-radius: 2px;
+        }
+        .panel-stand {
+            position: absolute;
+            bottom: 70px;
+            left: 170px;
+            width: 20px;
+            height: 30px;
+            background-color: #777;
+            transform: skewX(-20deg);
+            border-radius: 0 0 5px 5px;
+        }
+
+        .cell-zoom {
+            position: absolute;
+            top: 130px;
+            left: 370px;
+            width: 120px;
+            height: 120px;
+            border: 2px solid #555;
+            border-radius: 8px;
+            background-color: #eee;
+            z-index: 10;
+        }
+        .cell-zoom::before { /* Línea de conexión */
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 80px;
+            background-color: #555;
+            left: -2px;
+            top: 50%;
+            transform: translateY(-50%) rotate(90deg);
+            transform-origin: left center;
+        }
+        .cell-zoom .inner-cell {
+            width: 90px;
+            height: 90px;
+            background-color: #3f51b5;
+            border: 1px solid #283593;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 4px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            padding: 1px;
+        }
+        .cell-zoom .inner-cell div {
+            background-color: #283593;
+            border-radius: 1px;
+        }
+
+        .battery {
+            position: absolute;
+            bottom: 60px;
+            left: 450px;
+            width: 80px;
+            height: 50px;
+            background-color: #e65100; /* Naranja batería */
+            border: 2px solid #bf360c;
+            border-radius: 8px;
             z-index: 5;
         }
-
-        /* --- Animación de Fotones (Rayos Solares) --- */
-        .photon {
+        .battery::before, .battery::after {
+            content: '';
             position: absolute;
-            width: 5px;
-            height: 5px;
-            background-color: #ffcc00; /* Amarillo/Naranja brillante */
-            border-radius: 50%;
-            top: 0;
-            opacity: 0;
-            z-index: 10;
-            animation: photon-fall linear infinite;
+            width: 10px;
+            height: 15px;
+            background-color: #8d6e63;
+            border-radius: 3px;
+            top: -10px;
         }
-        @keyframes photon-fall {
-            0% { top: 0; opacity: 1; }
-            100% { top: 100%; opacity: 0; }
+        .battery::before { left: 10px; }
+        .battery::after { right: 10px; }
+
+        .house {
+            position: absolute;
+            bottom: 30px;
+            right: 50px;
+            width: 200px;
+            height: 200px;
+            border: 2px solid #555;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+            z-index: 5;
         }
-
-        /* Aplicar retrasos para que no caigan todos al mismo tiempo */
-        .photon:nth-child(1) { left: 10%; animation-delay: 0.1s; animation-duration: 2s; }
-        .photon:nth-child(2) { left: 30%; animation-delay: 0.5s; animation-duration: 1.5s; }
-        .photon:nth-child(3) { left: 50%; animation-delay: 0s; animation-duration: 2.2s; }
-        .photon:nth-child(4) { left: 70%; animation-delay: 0.8s; animation-duration: 1.8s; }
-        .photon:nth-child(5) { left: 90%; animation-delay: 0.3s; animation-duration: 2.5s; }
-        /* Puedes añadir más fotones para mayor densidad */
-
-        /* --- Animación de Electrones (Corriente) --- */
-        .electron-flow {
+        .house .roof {
+            position: absolute;
+            top: -40px;
+            left: -10px;
+            width: 0;
+            height: 0;
+            border-left: 110px solid transparent;
+            border-right: 110px solid transparent;
+            border-bottom: 50px solid #007bff; /* Techo azul */
+        }
+        .house .window {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border: 2px solid #555;
+            background-color: #add8e6;
+            border-radius: 3px;
+        }
+        .house .window.left { top: 60px; left: 20px; }
+        .house .window.right { top: 60px; right: 20px; }
+        .house .door {
             position: absolute;
             bottom: 0;
             left: 50%;
             transform: translateX(-50%);
-            width: 90%;
-            height: 30px;
-            background-color: rgba(0, 123, 255, 0.5); /* Simula el circuito */
-            border-radius: 0 0 5px 5px;
-            z-index: 2;
-            overflow: hidden;
+            width: 60px;
+            height: 80px;
+            background-color: #8b4513;
+            border: 2px solid #555;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
         }
+        .tree {
+            position: absolute;
+            bottom: 30px;
+            right: 10px;
+            width: 50px;
+            height: 50px;
+            background-color: #2e8b57;
+            border-radius: 50%;
+            border: 2px solid #228b22;
+            z-index: 4;
+        }
+        .tree::before {
+            content: '';
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 15px;
+            height: 30px;
+            background-color: #8b4513;
+            border-radius: 0 0 5px 5px;
+        }
+        .ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 30px;
+            background-color: #e0e0e0; /* Suelo */
+            z-index: 1;
+        }
+
+        /* --- Animaciones --- */
+        /* Fotones (Rayos Solares) */
+        .photon {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: #ffcc00; /* Amarillo brillante */
+            border-radius: 50%;
+            top: 80px; /* Inicia cerca del sol */
+            left: 50px;
+            opacity: 0;
+            z-index: 10;
+            animation: photon-path linear infinite;
+        }
+        @keyframes photon-path {
+            0%   { transform: translate(0, 0); opacity: 0; }
+            1%   { opacity: 1; } /* Aparece bruscamente */
+            50%  { transform: translate(80px, 150px); opacity: 1; } /* Hacia el panel */
+            100% { transform: translate(100px, 190px); opacity: 0; } /* Llega al panel y desaparece */
+        }
+        .photon:nth-child(1) { animation-delay: 0s; animation-duration: 2s; }
+        .photon:nth-child(2) { animation-delay: 0.5s; animation-duration: 2.2s; }
+        .photon:nth-child(3) { animation-delay: 1s; animation-duration: 2.5s; }
+        .photon:nth-child(4) { animation-delay: 1.5s; animation-duration: 1.8s; }
+        .photon:nth-child(5) { animation-delay: 2s; animation-duration: 2.3s; }
+
+        /* Electrones (Flujo de Energía) */
         .electron {
             position: absolute;
-            width: 4px;
-            height: 4px;
+            width: 6px;
+            height: 6px;
             background-color: #007bff; /* Azul para electrones */
             border-radius: 50%;
-            top: 50%;
-            margin-top: -2px;
-            animation: electron-move linear infinite;
-        }
-        @keyframes electron-move {
-            0% { left: 100%; }
-            100% { left: -10%; }
+            opacity: 0; /* Por defecto invisibles */
+            z-index: 15;
+            animation: electron-flow linear infinite;
         }
 
-        .electron:nth-child(1) { animation-duration: 3s; animation-delay: 0s; }
-        .electron:nth-child(2) { animation-duration: 3s; animation-delay: -1s; }
-        .electron:nth-child(3) { animation-duration: 3s; animation-delay: -2s; }
+        @keyframes electron-flow {
+            0% { transform: translate(0px, 0px); opacity: 0; } /* Inicia en el panel */
+            1% { opacity: 1; }
+            30% { transform: translate(30px, -20px); opacity: 1; } /* Hacia la célula */
+            31% { opacity: 0; transform: translate(0,0); } /* Desaparece y reaparece para el siguiente tramo */
 
-        /* --- Estilos de Control y Resultados --- */
-        .controls {
-            width: 45%;
+            32% { opacity: 1; transform: translate(380px, 100px); } /* Reaparece en la célula */
+            60% { transform: translate(380px, 0px); opacity: 1; } /* Baja por el cable */
+            61% { opacity: 0; transform: translate(0,0); }
+
+            62% { opacity: 1; transform: translate(450px, -50px); } /* Reaparece en la batería */
+            90% { transform: translate(650px, -50px); opacity: 1; } /* Hacia la casa */
+            100% { transform: translate(680px, -50px); opacity: 0; } /* Entra en la casa */
+        }
+
+        /* Posiciones iniciales y delays para los electrones */
+        .electron:nth-child(1) { left: 240px; bottom: 140px; animation-delay: 0s; animation-duration: 8s; }
+        .electron:nth-child(2) { left: 240px; bottom: 140px; animation-delay: -2s; animation-duration: 8s; }
+        .electron:nth-child(3) { left: 240px; bottom: 140px; animation-delay: -4s; animation-duration: 8s; }
+
+
+        /* --- Controles y Resultados --- */
+        .controls-results {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             padding: 20px;
-            background-color: #f7f7f7;
+            background-color: #f0f8ff; /* Azul muy claro */
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
         }
         label {
             font-weight: bold;
-            color: #ff9900;
+            color: #4a4a4a;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            width: 80%; /* Ancho ajustado */
+            max-width: 400px;
             margin-bottom: 15px;
         }
         input[type="range"] {
-            width: 100%;
+            width: 80%;
+            max-width: 400px;
             margin-top: 5px;
         }
         #irradianciaValor {
             font-size: 1.2em;
-            color: #28a745;
+            color: #28a745; /* Verde para el valor */
         }
         #resultado {
             margin-top: 20px;
             padding: 15px;
-            background-color: #d4edda;
-            border-left: 5px solid #28a745;
+            background-color: #d4edda; /* Fondo verde claro */
+            border-left: 5px solid #28a745; /* Borde verde */
             border-radius: 4px;
             font-size: 1.1em;
+            width: 80%;
+            max-width: 400px;
         }
         
         /* Estilos de la descripción */
         .description-arg {
             margin-top: 30px;
             padding: 20px;
-            background-color: #e6f7ff;
-            border-left: 5px solid #007bff;
+            background-color: #e6f7ff; /* Azul claro para la descripción */
+            border-left: 5px solid #007bff; /* Borde azul */
             border-radius: 4px;
         }
     </style>
@@ -171,37 +385,81 @@
 <body>
 
     <div class="container">
-        <h1>Simulador de Potencia Solar Fotovoltaica</h1>
+        <h1>Simulador Interactivo de Energía Solar Fotovoltaica</h1>
 
-        <div class="pv-section">
-            
-            <div class="visual-container">
-                <div class="solar-panel">
-                    <div class="photon"></div>
-                    <div class="photon"></div>
-                    <div class="photon"></div>
-                    <div class="photon"></div>
-                    <div class="photon"></div>
-                </div>
-                <div class="electron-flow" id="electronFlow">
-                    <div class="electron"></div>
-                    <div class="electron"></div>
-                    <div class="electron"></div>
+        <div class="diagram-container">
+            <div class="sun">
+                <span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span>
+            </div>
+            <span class="label rad">RADIACIÓN SOLAR</span>
+
+            <div class="solar-panel-static">
+                <div class="solar-cell-grid"></div><div class="solar-cell-grid"></div><div class="solar-cell-grid"></div><div class="solar-cell-grid"></div>
+                <div class="solar-cell-grid"></div><div class="solar-cell-grid"></div><div class="solar-cell-grid"></div><div class="solar-cell-grid"></div>
+                <div class="solar-cell-grid"></div><div class="solar-cell-grid"></div><div class="solar-cell-grid"></div><div class="solar-cell-grid"></div>
+            </div>
+            <div class="panel-stand"></div>
+            <span class="label panel">PANEL FOTOVOLTAICO</span>
+
+            <div class="cell-zoom">
+                <div class="inner-cell">
+                    <div></div><div></div><div></div>
+                    <div></div><div></div><div></div>
+                    <div></div><div></div><div></div>
                 </div>
             </div>
+            <span class="label celulas">CÉLULAS FOTOVOLTAICAS</span>
 
-            <div class="controls">
-                <p>Ajusta la intensidad de la radiación solar. Esto simula las condiciones del día (Soleado vs. Nublado).</p>
-                <label for="irradianciaSolar">
-                    Irradiancia Solar (W/m²):
-                    <span id="irradianciaValor">1000</span> W/m²
-                </label>
-                <input type="range" id="irradianciaSolar" min="0" max="1000" step="10" value="1000" 
-                       oninput="actualizarSimulador(this.value)">
+            <div class="battery"></div>
 
-                <div id="resultado">
-                    </div>
+            <div class="house">
+                <div class="roof"></div>
+                <div class="window left"></div>
+                <div class="window right"></div>
+                <div class="door"></div>
             </div>
+            <span class="label elect">ELECTRICIDAD</span>
+
+            <div class="tree"></div>
+
+            <div class="ground"></div>
+
+            <div class="photon" style="left: 130px; top: 100px;"></div>
+            <div class="photon" style="left: 100px; top: 80px;"></div>
+            <div class="photon" style="left: 170px; top: 120px;"></div>
+            <div class="photon" style="left: 110px; top: 130px;"></div>
+            <div class="photon" style="left: 150px; top: 90px;"></div>
+
+            <div class="electron" id="electron1"></div>
+            <div class="electron" id="electron2"></div>
+            <div class="electron" id="electron3"></div>
+
+            <svg class="connection-line" style="position: absolute; top: 180px; left: 250px; width: 120px; height: 100px; z-index: 2;">
+                <line x1="0" y1="50" x2="120" y2="50" stroke="#555" stroke-width="2"/>
+                <line x1="120" y1="50" x2="120" y2="10" stroke="#555" stroke-width="2"/>
+            </svg>
+            <svg class="connection-line" style="position: absolute; top: 220px; left: 490px; width: 100px; height: 50px; z-index: 2;">
+                <line x1="0" y1="25" x2="60" y2="25" stroke="#555" stroke-width="2"/>
+                <line x1="60" y1="25" x2="60" y2="40" stroke="#555" stroke-width="2"/>
+            </svg>
+            <svg class="connection-line" style="position: absolute; top: 260px; left: 530px; width: 220px; height: 50px; z-index: 2;">
+                <line x1="0" y1="25" x2="200" y2="25" stroke="#555" stroke-width="2"/>
+                <line x1="200" y1="25" x2="200" y2="0" stroke="#555" stroke-width="2"/>
+            </svg>
+
+        </div>
+
+        <div class="controls-results">
+            <label for="irradianciaSolar">
+                Irradiancia Solar (W/m²):
+                <span id="irradianciaValor">1000</span> W/m²
+            </label>
+            <input type="range" id="irradianciaSolar" min="0" max="1000" step="10" value="1000" 
+                   oninput="actualizarSimulador(this.value)">
+
+            <div id="resultado">
+                </div>
         </div>
         
         ---
@@ -218,7 +476,6 @@
         // Parámetros Fijos del Panel Solar Genérico (STC: 1000 W/m², 25°C)
         const areaPanel = 1.6; // Área de un panel estándar (aprox. 1.6 m²)
         const eficienciaPanel = 0.18; // 18% de eficiencia (valor moderno típico)
-        const potenciaNominal = areaPanel * 1000 * eficienciaPanel; // Potencia Nominal (W) a 1000 W/m²
 
         const irradianciaInput = document.getElementById('irradianciaSolar');
         const irradianciaValorSpan = document.getElementById('irradianciaValor');
@@ -258,35 +515,30 @@
         }
 
         function controlarAnimacion(I) {
-            // Controla la VISIBILIDAD de los fotones (simulando intensidad)
-            // Usamos la irradiancia como factor de opacidad.
-
+            // Controla la VISIBILIDAD y VELOCIDAD de los fotones
             photonElements.forEach(photon => {
-                // Opacidad basada en I/1000 (ej: 500 W/m² -> opacidad 0.5)
-                const opacity = I / 1000;
-                photon.style.opacity = opacity > 0.1 ? opacity : 0;
+                const opacity = I / 1000; // Opacidad basada en la irradiancia
+                photon.style.opacity = opacity > 0.1 ? opacity : 0; // Mínima opacidad antes de ser 0
+                
+                // Velocidad de fotones (más rápido con más I)
+                const maxPhotonDuration = 2.5; // Duración máxima (lento)
+                const minPhotonDuration = 0.5; // Duración mínima (rápido)
+                let photonDuration = ((1000 - I) / 1000) * (maxPhotonDuration - minPhotonDuration) + minPhotonDuration;
+                photon.style.animationDuration = `${photonDuration}s`;
             });
 
-            // Controla la VELOCIDAD de los electrones (simulando corriente)
-            // La corriente (y la velocidad de electrones) es directamente proporcional a la Irradiancia (I)
+            // Controla la VELOCIDAD de los electrones
+            const maxElectronDuration = 8; // Duración máxima (más lento) en segundos
+            const minElectronDuration = 2; // Duración mínima (más rápido) en segundos
             
-            const maxDuration = 3; // Duración máxima (más lento) en segundos
-            const minDuration = 0.5; // Duración mínima (más rápido) en segundos
+            let newDuration = ((1000 - I) / 1000) * (maxElectronDuration - minElectronDuration) + minElectronDuration;
+            newDuration = Math.max(minElectronDuration, Math.min(maxElectronDuration, newDuration)); 
             
-            // Mapeamos I (0 a 1000) a Duración (3s a 0.5s)
-            // (1000 - I) / 1000 * (maxDuration - minDuration) + minDuration
-            let newDuration = ((1000 - I) / 1000) * (maxDuration - minDuration) + minDuration;
-            
-            // Asegurarse de que la duración no baje del mínimo
-            newDuration = Math.max(minDuration, Math.min(maxDuration, newDuration)); 
-            
-            if (I < 10) {
-                // Si la irradiancia es casi cero (noche), detener el movimiento
+            if (I < 100) { /* Un umbral más alto para detener electrones, para no frenar tan bruscamente */
                 electronElements.forEach(e => e.style.animationPlayState = 'paused');
             } else {
                 electronElements.forEach(electron => {
                     electron.style.animationPlayState = 'running';
-                    // Aplicar la nueva duración de la animación
                     electron.style.animationDuration = `${newDuration}s`; 
                 });
             }
@@ -296,14 +548,11 @@
             const I = parseFloat(IString);
             irradianciaValorSpan.textContent = I;
 
-            // 1. Calcular Potencia y mostrar resultado
             calcularPotencia(I);
-            
-            // 2. Controlar las animaciones
             controlarAnimacion(I);
         }
 
-        // Inicializar el simulador al cargar la página con el valor por defecto (1000 W/m²)
+        // Inicializar el simulador al cargar la página
         document.addEventListener('DOMContentLoaded', () => {
             const initialI = irradianciaInput.value;
             actualizarSimulador(initialI);
