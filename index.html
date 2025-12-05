@@ -1,562 +1,299 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador Solar Fotovoltaico Estilo Diagrama</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f7f7f7; /* Fondo gris claro */
-            color: #333;
-        }
-        .container {
-            max-width: 950px;
-            margin: auto;
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            overflow: hidden; /* Para las animaciones que puedan salirse */
-        }
-        h1 {
-            color: #4a4a4a; /* Gris oscuro para el título */
-            text-align: center;
-            margin-bottom: 25px;
-            font-weight: 600;
-        }
-        h2 {
-            color: #007bff; /* Azul para subtítulos */
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 5px;
-            margin-top: 30px;
-            margin-bottom: 20px;
-        }
-
-        /* --- Contenedor Principal del Diagrama --- */
-        .diagram-container {
-            position: relative;
-            width: 100%;
-            height: 450px; /* Altura ajustada para el diagrama */
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background-color: #fff;
-            margin-bottom: 30px;
-            overflow: hidden; /* Muy importante para que las animaciones de electrones no se desborden */
-        }
-
-        /* --- Elementos Estáticos del Diagrama --- */
-        .sun {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            width: 60px;
-            height: 60px;
-            background-color: #ff9900; /* Naranja sol */
-            border-radius: 50%;
-            border: 2px solid #ff9900;
-            z-index: 10;
-        }
-        .sun::before, .sun::after { /* Rayos del sol */
-            content: '';
-            position: absolute;
-            width: 2px;
-            height: 15px;
-            background-color: #ff9900;
-            transform-origin: 50% 100%;
-            top: -15px;
-            left: 50%;
-            margin-left: -1px;
-            border-radius: 1px;
-        }
-        .sun::before { transform: rotate(45deg) translateY(-30px); }
-        .sun::after { transform: rotate(-45deg) translateY(-30px); }
-        .sun span { /* Rayos adicionales */
-            position: absolute;
-            width: 2px;
-            height: 15px;
-            background-color: #ff9900;
-            transform-origin: 50% 100%;
-            border-radius: 1px;
-        }
-        .sun span:nth-child(1) { transform: rotate(0deg) translateY(-30px); left: 50%; margin-left: -1px; top: -15px;}
-        .sun span:nth-child(2) { transform: rotate(90deg) translateX(30px); top: 50%; margin-top: -1px; right: -15px;}
-        .sun span:nth-child(3) { transform: rotate(180deg) translateY(30px); left: 50%; margin-left: -1px; bottom: -15px;}
-        .sun span:nth-child(4) { transform: rotate(270deg) translateX(-30px); top: 50%; margin-top: -1px; left: -15px;}
-        .sun span:nth-child(5) { transform: rotate(135deg) translate(20px, 20px); top: 50%; margin-left: -1px; right: -15px;} /* Diagonales */
-        .sun span:nth-child(6) { transform: rotate(-135deg) translate(-20px, 20px); top: 50%; margin-left: -1px; left: -15px;}
-        .sun span:nth-child(7) { transform: rotate(225deg) translate(-20px, -20px); bottom: -15px; left: -15px;}
-        .sun span:nth-child(8) { transform: rotate(-45deg) translate(20px, -20px); bottom: -15px; right: -15px;}
-
-
-        .label {
-            position: absolute;
-            font-size: 0.9em;
-            color: #555;
-            white-space: nowrap;
-        }
-        .label.rad { top: 120px; left: 20px; font-weight: bold; }
-        .label.panel { bottom: 10px; left: 100px; font-weight: bold; }
-        .label.celulas { top: 90px; left: 370px; font-weight: bold; }
-        .label.elect { bottom: 90px; left: 500px; font-weight: bold; }
-
-        .solar-panel-static {
-            position: absolute;
-            bottom: 80px;
-            left: 100px;
-            width: 150px;
-            height: 100px;
-            background-color: #3f51b5; /* Azul oscuro panel */
-            border: 2px solid #283593;
-            border-radius: 5px;
-            z-index: 5;
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            gap: 2px;
-            padding: 2px;
-        }
-        .solar-cell-grid {
-            background-color: #283593; /* Celdas más oscuras */
-            border-radius: 2px;
-        }
-        .panel-stand {
-            position: absolute;
-            bottom: 70px;
-            left: 170px;
-            width: 20px;
-            height: 30px;
-            background-color: #777;
-            transform: skewX(-20deg);
-            border-radius: 0 0 5px 5px;
-        }
-
-        .cell-zoom {
-            position: absolute;
-            top: 130px;
-            left: 370px;
-            width: 120px;
-            height: 120px;
-            border: 2px solid #555;
-            border-radius: 8px;
-            background-color: #eee;
-            z-index: 10;
-        }
-        .cell-zoom::before { /* Línea de conexión */
-            content: '';
-            position: absolute;
-            width: 2px;
-            height: 80px;
-            background-color: #555;
-            left: -2px;
-            top: 50%;
-            transform: translateY(-50%) rotate(90deg);
-            transform-origin: left center;
-        }
-        .cell-zoom .inner-cell {
-            width: 90px;
-            height: 90px;
-            background-color: #3f51b5;
-            border: 1px solid #283593;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            border-radius: 4px;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1px;
-            padding: 1px;
-        }
-        .cell-zoom .inner-cell div {
-            background-color: #283593;
-            border-radius: 1px;
-        }
-
-        .battery {
-            position: absolute;
-            bottom: 60px;
-            left: 450px;
-            width: 80px;
-            height: 50px;
-            background-color: #e65100; /* Naranja batería */
-            border: 2px solid #bf360c;
-            border-radius: 8px;
-            z-index: 5;
-        }
-        .battery::before, .battery::after {
-            content: '';
-            position: absolute;
-            width: 10px;
-            height: 15px;
-            background-color: #8d6e63;
-            border-radius: 3px;
-            top: -10px;
-        }
-        .battery::before { left: 10px; }
-        .battery::after { right: 10px; }
-
-        .house {
-            position: absolute;
-            bottom: 30px;
-            right: 50px;
-            width: 200px;
-            height: 200px;
-            border: 2px solid #555;
-            border-radius: 5px;
-            background-color: #f0f0f0;
-            z-index: 5;
-        }
-        .house .roof {
-            position: absolute;
-            top: -40px;
-            left: -10px;
-            width: 0;
-            height: 0;
-            border-left: 110px solid transparent;
-            border-right: 110px solid transparent;
-            border-bottom: 50px solid #007bff; /* Techo azul */
-        }
-        .house .window {
-            position: absolute;
-            width: 40px;
-            height: 40px;
-            border: 2px solid #555;
-            background-color: #add8e6;
-            border-radius: 3px;
-        }
-        .house .window.left { top: 60px; left: 20px; }
-        .house .window.right { top: 60px; right: 20px; }
-        .house .door {
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 80px;
-            background-color: #8b4513;
-            border: 2px solid #555;
-            border-bottom: none;
-            border-radius: 5px 5px 0 0;
-        }
-        .tree {
-            position: absolute;
-            bottom: 30px;
-            right: 10px;
-            width: 50px;
-            height: 50px;
-            background-color: #2e8b57;
-            border-radius: 50%;
-            border: 2px solid #228b22;
-            z-index: 4;
-        }
-        .tree::before {
-            content: '';
-            position: absolute;
-            bottom: -30px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 15px;
-            height: 30px;
-            background-color: #8b4513;
-            border-radius: 0 0 5px 5px;
-        }
-        .ground {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 30px;
-            background-color: #e0e0e0; /* Suelo */
-            z-index: 1;
-        }
-
-        /* --- Animaciones --- */
-        /* Fotones (Rayos Solares) */
-        .photon {
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            background-color: #ffcc00; /* Amarillo brillante */
-            border-radius: 50%;
-            top: 80px; /* Inicia cerca del sol */
-            left: 50px;
-            opacity: 0;
-            z-index: 10;
-            animation: photon-path linear infinite;
-        }
-        @keyframes photon-path {
-            0%   { transform: translate(0, 0); opacity: 0; }
-            1%   { opacity: 1; } /* Aparece bruscamente */
-            50%  { transform: translate(80px, 150px); opacity: 1; } /* Hacia el panel */
-            100% { transform: translate(100px, 190px); opacity: 0; } /* Llega al panel y desaparece */
-        }
-        .photon:nth-child(1) { animation-delay: 0s; animation-duration: 2s; }
-        .photon:nth-child(2) { animation-delay: 0.5s; animation-duration: 2.2s; }
-        .photon:nth-child(3) { animation-delay: 1s; animation-duration: 2.5s; }
-        .photon:nth-child(4) { animation-delay: 1.5s; animation-duration: 1.8s; }
-        .photon:nth-child(5) { animation-delay: 2s; animation-duration: 2.3s; }
-
-        /* Electrones (Flujo de Energía) */
-        .electron {
-            position: absolute;
-            width: 6px;
-            height: 6px;
-            background-color: #007bff; /* Azul para electrones */
-            border-radius: 50%;
-            opacity: 0; /* Por defecto invisibles */
-            z-index: 15;
-            animation: electron-flow linear infinite;
-        }
-
-        @keyframes electron-flow {
-            0% { transform: translate(0px, 0px); opacity: 0; } /* Inicia en el panel */
-            1% { opacity: 1; }
-            30% { transform: translate(30px, -20px); opacity: 1; } /* Hacia la célula */
-            31% { opacity: 0; transform: translate(0,0); } /* Desaparece y reaparece para el siguiente tramo */
-
-            32% { opacity: 1; transform: translate(380px, 100px); } /* Reaparece en la célula */
-            60% { transform: translate(380px, 0px); opacity: 1; } /* Baja por el cable */
-            61% { opacity: 0; transform: translate(0,0); }
-
-            62% { opacity: 1; transform: translate(450px, -50px); } /* Reaparece en la batería */
-            90% { transform: translate(650px, -50px); opacity: 1; } /* Hacia la casa */
-            100% { transform: translate(680px, -50px); opacity: 0; } /* Entra en la casa */
-        }
-
-        /* Posiciones iniciales y delays para los electrones */
-        .electron:nth-child(1) { left: 240px; bottom: 140px; animation-delay: 0s; animation-duration: 8s; }
-        .electron:nth-child(2) { left: 240px; bottom: 140px; animation-delay: -2s; animation-duration: 8s; }
-        .electron:nth-child(3) { left: 240px; bottom: 140px; animation-delay: -4s; animation-duration: 8s; }
-
-
-        /* --- Controles y Resultados --- */
-        .controls-results {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            background-color: #f0f8ff; /* Azul muy claro */
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-        }
-        label {
-            font-weight: bold;
-            color: #4a4a4a;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 80%; /* Ancho ajustado */
-            max-width: 400px;
-            margin-bottom: 15px;
-        }
-        input[type="range"] {
-            width: 80%;
-            max-width: 400px;
-            margin-top: 5px;
-        }
-        #irradianciaValor {
-            font-size: 1.2em;
-            color: #28a745; /* Verde para el valor */
-        }
-        #resultado {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #d4edda; /* Fondo verde claro */
-            border-left: 5px solid #28a745; /* Borde verde */
-            border-radius: 4px;
-            font-size: 1.1em;
-            width: 80%;
-            max-width: 400px;
-        }
-        
-        /* Estilos de la descripción */
-        .description-arg {
-            margin-top: 30px;
-            padding: 20px;
-            background-color: #e6f7ff; /* Azul claro para la descripción */
-            border-left: 5px solid #007bff; /* Borde azul */
-            border-radius: 4px;
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Simulador Fotovoltaico - Secundaria</title>
+  <style>
+    :root{--bg:#f6f8fb;--card:#ffffff;--accent:#0b74de;--muted:#6b7280}
+    body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; margin:0; background:var(--bg); color:#111}
+    .container{max-width:1000px;margin:28px auto;padding:18px}
+    header{display:flex;gap:12px;align-items:center}
+    h1{margin:0;font-size:1.25rem}
+    .grid{display:grid;grid-template-columns:1fr 420px;gap:18px;margin-top:18px}
+    .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(11,20,40,0.06)}
+    label{display:block;font-size:0.85rem;color:var(--muted);margin-bottom:6px}
+    input[type=number], input[type=range], select{width:100%;padding:8px;border-radius:8px;border:1px solid #e6eef8;font-size:0.95rem}
+    .row{display:flex;gap:10px}
+    .row > *{flex:1}
+    .btn{background:var(--accent);color:white;border:none;padding:10px 12px;border-radius:8px;cursor:pointer}
+    .results{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+    .result-item{padding:10px;border-radius:8px;background:#f8fbff;text-align:center}
+    .muted{color:var(--muted);font-size:0.85rem}
+    .chart{margin-top:12px}
+    footer{margin-top:18px;font-size:0.82rem;color:var(--muted)}
+    @media (max-width:880px){.grid{grid-template-columns:1fr;}.results{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
+  <div class="container">
+    <header>
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <rect x="2" y="9" width="20" height="10" rx="1.5" fill="#0b74de"/>
+        <path d="M6 9V6a4 4 0 018 0v3" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div>
+        <h1>Simulador fotovoltaico (versión educativa)</h1>
+        <div class="muted">Introduce parámetros y observa la energía estimada por día, mes y año.</div>
+      </div>
+    </header>
 
-    <div class="container">
-        <h1>Simulador Interactivo de Energía Solar Fotovoltaica</h1>
+<!-- Animación de fotones impactando en paneles solares -->
+<div style="text-align:center; margin:20px 0;">
+  <svg id="animSolar" width="100%" height="220" viewBox="0 0 600 220">
+    <!-- Sol -->
+    <circle cx="80" cy="80" r="35" fill="orange" stroke="#ff7b00" stroke-width="4"></circle>
 
-        <div class="diagram-container">
-            <div class="sun">
-                <span></span><span></span><span></span><span></span>
-                <span></span><span></span><span></span><span></span>
-            </div>
-            <span class="label rad">RADIACIÓN SOLAR</span>
+    <!-- Panel solar -->
+    <rect x="350" y="100" width="180" height="80" fill="#005b96" stroke="#003f63" stroke-width="3"></rect>
+    <line x1="350" y1="130" x2="530" y2="130" stroke="#003f63" stroke-width="2"></line>
+    <line x1="350" y1="150" x2="530" y2="150" stroke="#003f63" stroke-width="2"></line>
+    <line x1="350" y1="170" x2="530" y2="170" stroke="#003f63" stroke-width="2"></line>
 
-            <div class="solar-panel-static">
-                <div class="solar-cell-grid"></div><div class="solar-cell-grid"></div><div class="solar-cell-grid"></div><div class="solar-cell-grid"></div>
-                <div class="solar-cell-grid"></div><div class="solar-cell-grid"></div><div class="solar-cell-grid"></div><div class="solar-cell-grid"></div>
-                <div class="solar-cell-grid"></div><div class="solar-cell-grid"></div><div class="solar-cell-grid"></div><div class="solar-cell-grid"></div>
-            </div>
-            <div class="panel-stand"></div>
-            <span class="label panel">PANEL FOTOVOLTAICO</span>
+    <!-- Fotones animados -->
+    <g id="photons"></g>
+  </svg>
+</div>
 
-            <div class="cell-zoom">
-                <div class="inner-cell">
-                    <div></div><div></div><div></div>
-                    <div></div><div></div><div></div>
-                    <div></div><div></div><div></div>
-                </div>
-            </div>
-            <span class="label celulas">CÉLULAS FOTOVOLTAICAS</span>
+<script>
+// Animación de fotones (círculos amarillos moviéndose hacia el panel)
+(function(){
+  const svg = document.getElementById('animSolar');
+  const photonsGroup = document.getElementById('photons');
 
-            <div class="battery"></div>
+  function createPhoton(){
+    const photon = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    photon.setAttribute('cx', 120);
+    photon.setAttribute('cy', 80 + Math.random()*80 - 40);
+    photon.setAttribute('r', 6);
+    photon.setAttribute('fill', '#ffcc00');
+    photon.setAttribute('opacity', '0.9');
+    photonsGroup.appendChild(photon);
 
-            <div class="house">
-                <div class="roof"></div>
-                <div class="window left"></div>
-                <div class="window right"></div>
-                <div class="door"></div>
-            </div>
-            <span class="label elect">ELECTRICIDAD</span>
+    let x = 120;
+    const targetX = 350;
 
-            <div class="tree"></div>
+    function move(){
+      x += 2 + Math.random()*1.5;
+      photon.setAttribute('cx', x);
 
-            <div class="ground"></div>
+      if(x < targetX){
+        requestAnimationFrame(move);
+      } else {
+        photonsGroup.removeChild(photon);
+      }
+    }
+    move();
+  }
 
-            <div class="photon" style="left: 130px; top: 100px;"></div>
-            <div class="photon" style="left: 100px; top: 80px;"></div>
-            <div class="photon" style="left: 170px; top: 120px;"></div>
-            <div class="photon" style="left: 110px; top: 130px;"></div>
-            <div class="photon" style="left: 150px; top: 90px;"></div>
+  // Crear fotones continuamente
+  setInterval(createPhoton, 300);
+})();
+</script>
 
-            <div class="electron" id="electron1"></div>
-            <div class="electron" id="electron2"></div>
-            <div class="electron" id="electron3"></div>
 
-            <svg class="connection-line" style="position: absolute; top: 180px; left: 250px; width: 120px; height: 100px; z-index: 2;">
-                <line x1="0" y1="50" x2="120" y2="50" stroke="#555" stroke-width="2"/>
-                <line x1="120" y1="50" x2="120" y2="10" stroke="#555" stroke-width="2"/>
-            </svg>
-            <svg class="connection-line" style="position: absolute; top: 220px; left: 490px; width: 100px; height: 50px; z-index: 2;">
-                <line x1="0" y1="25" x2="60" y2="25" stroke="#555" stroke-width="2"/>
-                <line x1="60" y1="25" x2="60" y2="40" stroke="#555" stroke-width="2"/>
-            </svg>
-            <svg class="connection-line" style="position: absolute; top: 260px; left: 530px; width: 220px; height: 50px; z-index: 2;">
-                <line x1="0" y1="25" x2="200" y2="25" stroke="#555" stroke-width="2"/>
-                <line x1="200" y1="25" x2="200" y2="0" stroke="#555" stroke-width="2"/>
-            </svg>
 
+    <div class="grid">
+      <!-- Panel izquierdo: controles -->
+      <section class="card" aria-labelledby="controles-title">
+        <h2 id="controles-title" style="margin-top:0;font-size:1rem">Parámetros del sistema</h2>
+
+        <label for="panel-w">Potencia por panel (W)</label>
+        <input id="panel-w" type="number" step="1" min="1" value="320" />
+
+        <label for="n-panels">Cantidad de paneles</label>
+        <input id="n-panels" type="number" step="1" min="1" value="6" />
+
+        <div style="display:flex;gap:10px;margin-top:8px">
+          <div style="flex:1">
+            <label for="psh">Horas pico de sol (h/día)</label>
+            <input id="psh" type="number" step="0.1" min="0" value="4.5" />
+          </div>
+          <div style="flex:1">
+            <label for="loss">Pérdidas del sistema (%)</label>
+            <input id="loss" type="number" step="0.1" min="0" max="100" value="14" />
+          </div>
         </div>
 
-        <div class="controls-results">
-            <label for="irradianciaSolar">
-                Irradiancia Solar (W/m²):
-                <span id="irradianciaValor">1000</span> W/m²
-            </label>
-            <input type="range" id="irradianciaSolar" min="0" max="1000" step="10" value="1000" 
-                   oninput="actualizarSimulador(this.value)">
+        <label for="eff">Eficiencia estimada del sistema (%)</label>
+        <input id="eff" type="number" step="0.1" min="1" max="100" value="90" />
 
-            <div id="resultado">
-                </div>
-        </div>
-        
-        ---
+        <label for="latitude">Provincia / latitud aproximada</label>
+        <select id="latitude">
+          <option value="-34.6">Buenos Aires (lat -34.6)</option>
+          <option value="-31.4">Córdoba (-31.4)</option>
+          <option value="-38.7">Patagonia - Chubut (-43)</option>
+          <option value="-24.8">Salta (-24.8)</option>
+          <option value="-68">Otra / manual</option>
+        </select>
 
-        <h2>🇦🇷 Desarrollo de la Energía Solar en Argentina</h2>
-        <div class="description-arg">
-            <p>El desarrollo de la energía solar fotovoltaica en **Argentina** está en fuerte crecimiento, especialmente impulsado por la ley de **Generación Distribuida** (para usuarios residenciales) y el programa **RenovAr**.</p>
-            <p>El país tiene un potencial solar sobresaliente, particularmente en la región del **Noroeste Argentino (NOA)**, con provincias como **Jujuy** y **Salta** que tienen algunos de los niveles de radiación solar más altos del mundo.</p>
-            <p>Proyectos emblemáticos, como el parque solar **Cauchari** en Jujuy, demuestran la capacidad de Argentina para implementar grandes infraestructuras solares y posicionarse como un líder regional en esta tecnología renovable.</p>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button id="calc" class="btn">Calcular</button>
+          <button id="reset" class="btn" style="background:#9aaed6">Restablecer</button>
         </div>
+
+        <div class="muted" style="margin-top:12px">Nota: este simulador entrega estimaciones pedagógicas, no es un proyecto técnico final.</div>
+      </section>
+
+      <!-- Panel derecho: resultados y gráfico -->
+      <aside class="card" aria-labelledby="resultados-title">
+        <h2 id="resultados-title" style="margin-top:0;font-size:1rem">Resultados</h2>
+
+        <div class="results" id="summary">
+          <div class="result-item">
+            <div class="muted">Energía diaria</div>
+            <div style="font-weight:700;font-size:1.1rem" id="daily">-- kWh/día</div>
+          </div>
+          <div class="result-item">
+            <div class="muted">Energía mensual (prom.)</div>
+            <div style="font-weight:700;font-size:1.1rem" id="monthly">-- kWh/mes</div>
+          </div>
+          <div class="result-item">
+            <div class="muted">Energía anual</div>
+            <div style="font-weight:700;font-size:1.1rem" id="annual">-- kWh/año</div>
+          </div>
+          <div class="result-item">
+            <div class="muted">CO₂ evitado (aprox.)</div>
+            <div style="font-weight:700;font-size:1.1rem" id="co2">-- kg CO₂/año</div>
+          </div>
+        </div>
+
+        <div class="chart card" style="margin-top:12px;padding:10px">
+          <div class="muted">Producción estimada por mes</div>
+          <svg id="bars" width="100%" height="160" role="img" aria-label="Gráfico de barras mensual"></svg>
+        </div>
+
+        <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+          <label class="muted" style="margin:0;flex:1">Factor de emisión CO₂ (kg CO₂ / kWh)</label>
+          <input id="co2factor" type="number" step="0.01" value="0.45" style="width:90px" />
+        </div>
+
+      </aside>
     </div>
 
-    <script>
-        // Parámetros Fijos del Panel Solar Genérico (STC: 1000 W/m², 25°C)
-        const areaPanel = 1.6; // Área de un panel estándar (aprox. 1.6 m²)
-        const eficienciaPanel = 0.18; // 18% de eficiencia (valor moderno típico)
+    <footer class="muted">Cómo usar: cambia los parámetros y presiona "Calcular". Ideal para actividades de aula.</footer>
+  </div>
 
-        const irradianciaInput = document.getElementById('irradianciaSolar');
-        const irradianciaValorSpan = document.getElementById('irradianciaValor');
-        const resultadoDiv = document.getElementById('resultado');
-        const photonElements = document.querySelectorAll('.photon');
-        const electronElements = document.querySelectorAll('.electron');
+  <script>
+    // Helpers
+    const qs = (s)=>document.querySelector(s);
+    const n = (id)=>Number(qs(id).value);
 
-        function calcularPotencia(I) {
-            // I = Irradiancia (W/m²)
+    function daysInMonth(m){ return new Date(2024,m,0).getDate(); }
 
-            // Potencia calculada (W) = Área (m²) * Eficiencia * Irradiancia (W/m²)
-            let potenciaW = areaPanel * eficienciaPanel * I;
-            
-            // Convertir la potencia a Kilovatios (kW)
-            const potenciakW = potenciaW / 1000;
+    // Estimación mensual: aplicamos una variación estacional simple según latitud
+    function seasonFactors(lat){
+      // For simplicity: generate 12 multipliers (0.7 - 1.3 range) shifted by latitude
+      // Northern hemisphere inverted vs southern: latitude negative -> southern
+      const base = [];
+      for(let i=0;i<12;i++){
+        // simple sinusoid: peak in January (mid-summer southern) -> shift by lat
+        const theta = (i/12)*2*Math.PI;
+        base.push(1 + 0.25*Math.sin(theta - (lat/90)) );
+      }
+      // normalize roughly to average 1
+      const avg = base.reduce((a,b)=>a+b,0)/12;
+      return base.map(x=>x/avg);
+    }
 
-            let mensaje = "";
-            let color = "green";
+    function calculate(){
+      const panelW = n('#panel-w');
+      const panels = n('#n-panels');
+      const psh = n('#psh');
+      const lossesPct = n('#loss')/100;
+      const effPct = n('#eff')/100;
+      const lat = Number(qs('#latitude').value);
+      const co2factor = n('#co2factor');
 
-            if (I < 10) {
-                mensaje = "Noche o condiciones extremadamente nubladas. Generación nula.";
-                color = "gray";
-            } else if (I < 300) {
-                mensaje = "Día muy nublado o anochecer. Baja generación.";
-                color = "orange";
-            } else if (I < 800) {
-                mensaje = "Día parcialmente nublado o condiciones normales fuera del mediodía.";
-                color = "blue";
-            } else {
-                mensaje = "Condiciones óptimas: Sol brillante.";
-                color = "green";
-            }
+      // DC system rated power (kW)
+      const systemKW = (panelW * panels)/1000; // kW
 
-            resultadoDiv.innerHTML = `<p><strong>Irradiancia:</strong> ${I} W/m²</p>
-                                      <p><strong>Potencia Producida:</strong> <strong>${potenciakW.toFixed(2)} kW</strong></p>
-                                      <p style="color: ${color}; font-size: 0.9em;">${mensaje}</p>`;
-        }
+      // Energía diaria (kWh) aproximada: systemKW * PSH * eficiencia neta
+      const netFactor = effPct * (1 - lossesPct);
+      const daily = systemKW * psh * netFactor; // kWh/día
 
-        function controlarAnimacion(I) {
-            // Controla la VISIBILIDAD y VELOCIDAD de los fotones
-            photonElements.forEach(photon => {
-                const opacity = I / 1000; // Opacidad basada en la irradiancia
-                photon.style.opacity = opacity > 0.1 ? opacity : 0; // Mínima opacidad antes de ser 0
-                
-                // Velocidad de fotones (más rápido con más I)
-                const maxPhotonDuration = 2.5; // Duración máxima (lento)
-                const minPhotonDuration = 0.5; // Duración mínima (rápido)
-                let photonDuration = ((1000 - I) / 1000) * (maxPhotonDuration - minPhotonDuration) + minPhotonDuration;
-                photon.style.animationDuration = `${photonDuration}s`;
-            });
+      // Monthly and annual estimates with seasonality
+      const months = Array.from({length:12},(_,i)=>i+1);
+      const season = seasonFactors(lat);
+      const monthly = months.map((m,i)=>{
+        const days = daysInMonth(m);
+        // vary PSH per month by seasonal factor
+        const monthlyEnergy = systemKW * psh * season[i] * netFactor * days;
+        return monthlyEnergy;
+      });
+      const annual = monthly.reduce((a,b)=>a+b,0);
+      const monthlyAvg = annual/12;
+      const co2saved = annual * co2factor; // kg CO2/year
 
-            // Controla la VELOCIDAD de los electrones
-            const maxElectronDuration = 8; // Duración máxima (más lento) en segundos
-            const minElectronDuration = 2; // Duración mínima (más rápido) en segundos
-            
-            let newDuration = ((1000 - I) / 1000) * (maxElectronDuration - minElectronDuration) + minElectronDuration;
-            newDuration = Math.max(minElectronDuration, Math.min(maxElectronDuration, newDuration)); 
-            
-            if (I < 100) { /* Un umbral más alto para detener electrones, para no frenar tan bruscamente */
-                electronElements.forEach(e => e.style.animationPlayState = 'paused');
-            } else {
-                electronElements.forEach(electron => {
-                    electron.style.animationPlayState = 'running';
-                    electron.style.animationDuration = `${newDuration}s`; 
-                });
-            }
-        }
+      // Update UI
+      qs('#daily').textContent = daily.toFixed(2) + ' kWh/día';
+      qs('#monthly').textContent = monthlyAvg.toFixed(1) + ' kWh/mes';
+      qs('#annual').textContent = annual.toFixed(0) + ' kWh/año';
+      qs('#co2').textContent = co2saved.toFixed(0) + ' kg CO₂/año';
 
-        function actualizarSimulador(IString) {
-            const I = parseFloat(IString);
-            irradianciaValorSpan.textContent = I;
+      drawBars(monthly);
+    }
 
-            calcularPotencia(I);
-            controlarAnimacion(I);
-        }
+    function drawBars(values){
+      const svg = qs('#bars');
+      while(svg.firstChild) svg.removeChild(svg.firstChild);
+      const w = svg.clientWidth || 800;
+      const h = 160;
+      svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
 
-        // Inicializar el simulador al cargar la página
-        document.addEventListener('DOMContentLoaded', () => {
-            const initialI = irradianciaInput.value;
-            actualizarSimulador(initialI);
-        });
-    </script>
+      const max = Math.max(...values);
+      const pad = 18;
+      const barW = (w - pad*2) / values.length * 0.75;
+      const gap = ((w - pad*2)/values.length) - barW;
+
+      values.forEach((v,i)=>{
+        const x = pad + i*(barW+gap);
+        const barH = (v / max) * (h - 48);
+        const y = h - barH - 24;
+
+        const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+        rect.setAttribute('x', x);
+        rect.setAttribute('y', y);
+        rect.setAttribute('width', barW);
+        rect.setAttribute('height', barH);
+        rect.setAttribute('rx', 4);
+        rect.setAttribute('fill', '#0b74de');
+        svg.appendChild(rect);
+
+        const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+        label.setAttribute('x', x + barW/2);
+        label.setAttribute('y', h - 6);
+        label.setAttribute('text-anchor','middle');
+        label.setAttribute('font-size','11');
+        label.setAttribute('fill','#334155');
+        const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+        label.textContent = monthNames[i];
+        svg.appendChild(label);
+      });
+    }
+
+    // Events
+    qs('#calc').addEventListener('click',()=>{
+      try{ calculate(); }catch(e){ alert('Error en cálculo: '+e.message); }
+    });
+
+    qs('#reset').addEventListener('click',()=>{
+      qs('#panel-w').value = 320;
+      qs('#n-panels').value = 6;
+      qs('#psh').value = 4.5;
+      qs('#loss').value = 14;
+      qs('#eff').value = 90;
+      qs('#latitude').value = -34.6;
+      qs('#co2factor').value = 0.45;
+      qs('#daily').textContent = '-- kWh/día';
+      qs('#monthly').textContent = '-- kWh/mes';
+      qs('#annual').textContent = '-- kWh/año';
+      qs('#co2').textContent = '-- kg CO₂/año';
+      const svg = qs('#bars'); while(svg.firstChild) svg.removeChild(svg);
+    });
+
+    // Auto-calc first view
+    window.addEventListener('load',()=>{ calculate(); });
+  </script>
 </body>
 </html>
