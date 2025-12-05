@@ -1,1 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Energía Fotovoltaica</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #fffbe6; /* Fondo amarillo muy claro */
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        h1 {
+            color: #ff9900;
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+        h2 {
+            color: #007bff;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
 
+        /* --- Sección Visual y Animación --- */
+        .pv-section {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-start;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #fcf8e3;
+            border-radius: 8px;
+        }
+        .visual-container {
+            width: 50%;
+            height: 250px;
+            position: relative;
+            background-color: #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #ccc;
+        }
+
+        /* Simulación del Panel Solar */
+        .solar-panel {
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                45deg,
+                #333,
+                #333 10px,
+                #222 10px,
+                #222 20px
+            );
+            position: relative;
+            z-index: 5;
+        }
+
+        /* --- Animación de Fotones (Rayos Solares) --- */
+        .photon {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background-color: #ffcc00; /* Amarillo/Naranja brillante */
+            border-radius: 50%;
+            top: 0;
+            opacity: 0;
+            z-index: 10;
+            animation: photon-fall linear infinite;
+        }
+        @keyframes photon-fall {
+            0% { top: 0; opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        /* Aplicar retrasos para que no caigan todos al mismo tiempo */
+        .photon:nth-child(1) { left: 10%; animation-delay: 0.1s; animation-duration: 2s; }
+        .photon:nth-child(2) { left: 30%; animation-delay: 0.5s; animation-duration: 1.5s; }
+        .photon:nth-child(3) { left: 50%; animation-delay: 0s; animation-duration: 2.2s; }
+        .photon:nth-child(4) { left: 70%; animation-delay: 0.8s; animation-duration: 1.8s; }
+        .photon:nth-child(5) { left: 90%; animation-delay: 0.3s; animation-duration: 2.5s; }
+        /* Puedes añadir más fotones para mayor densidad */
+
+        /* --- Animación de Electrones (Corriente) --- */
+        .electron-flow {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            height: 30px;
+            background-color: rgba(0, 123, 255, 0.5); /* Simula el circuito */
+            border-radius: 0 0 5px 5px;
+            z-index: 2;
+            overflow: hidden;
+        }
+        .electron {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background-color: #007bff; /* Azul para electrones */
+            border-radius: 50%;
+            top: 50%;
+            margin-top: -2px;
+            animation: electron-move linear infinite;
+        }
+        @keyframes electron-move {
+            0% { left: 100%; }
+            100% { left: -10%; }
+        }
+
+        .electron:nth-child(1) { animation-duration: 3s; animation-delay: 0s; }
+        .electron:nth-child(2) { animation-duration: 3s; animation-delay: -1s; }
+        .electron:nth-child(3) { animation-duration: 3s; animation-delay: -2s; }
+
+        /* --- Estilos de Control y Resultados --- */
+        .controls {
+            width: 45%;
+            padding: 20px;
+            background-color: #f7f7f7;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        label {
+            font-weight: bold;
+            color: #ff9900;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin-top: 5px;
+        }
+        #irradianciaValor {
+            font-size: 1.2em;
+            color: #28a745;
+        }
+        #resultado {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #d4edda;
+            border-left: 5px solid #28a745;
+            border-radius: 4px;
+            font-size: 1.1em;
+        }
+        
+        /* Estilos de la descripción */
+        .description-arg {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #e6f7ff;
+            border-left: 5px solid #007bff;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Simulador de Potencia Solar Fotovoltaica</h1>
+
+        <div class="pv-section">
+            
+            <div class="visual-container">
+                <div class="solar-panel">
+                    <div class="photon"></div>
+                    <div class="photon"></div>
+                    <div class="photon"></div>
+                    <div class="photon"></div>
+                    <div class="photon"></div>
+                </div>
+                <div class="electron-flow" id="electronFlow">
+                    <div class="electron"></div>
+                    <div class="electron"></div>
+                    <div class="electron"></div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <p>Ajusta la intensidad de la radiación solar. Esto simula las condiciones del día (Soleado vs. Nublado).</p>
+                <label for="irradianciaSolar">
+                    Irradiancia Solar (W/m²):
+                    <span id="irradianciaValor">1000</span> W/m²
+                </label>
+                <input type="range" id="irradianciaSolar" min="0" max="1000" step="10" value="1000" 
+                       oninput="actualizarSimulador(this.value)">
+
+                <div id="resultado">
+                    </div>
+            </div>
+        </div>
+        
+        ---
+
+        <h2>🇦🇷 Desarrollo de la Energía Solar en Argentina</h2>
+        <div class="description-arg">
+            <p>El desarrollo de la energía solar fotovoltaica en **Argentina** está en fuerte crecimiento, especialmente impulsado por la ley de **Generación Distribuida** (para usuarios residenciales) y el programa **RenovAr**.</p>
+            <p>El país tiene un potencial solar sobresaliente, particularmente en la región del **Noroeste Argentino (NOA)**, con provincias como **Jujuy** y **Salta** que tienen algunos de los niveles de radiación solar más altos del mundo.</p>
+            <p>Proyectos emblemáticos, como el parque solar **Cauchari** en Jujuy, demuestran la capacidad de Argentina para implementar grandes infraestructuras solares y posicionarse como un líder regional en esta tecnología renovable.</p>
+        </div>
+    </div>
+
+    <script>
+        // Parámetros Fijos del Panel Solar Genérico (STC: 1000 W/m², 25°C)
+        const areaPanel = 1.6; // Área de un panel estándar (aprox. 1.6 m²)
+        const eficienciaPanel = 0.18; // 18% de eficiencia (valor moderno típico)
+        const potenciaNominal = areaPanel * 1000 * eficienciaPanel; // Potencia Nominal (W) a 1000 W/m²
+
+        const irradianciaInput = document.getElementById('irradianciaSolar');
+        const irradianciaValorSpan = document.getElementById('irradianciaValor');
+        const resultadoDiv = document.getElementById('resultado');
+        const photonElements = document.querySelectorAll('.photon');
+        const electronElements = document.querySelectorAll('.electron');
+
+        function calcularPotencia(I) {
+            // I = Irradiancia (W/m²)
+
+            // Potencia calculada (W) = Área (m²) * Eficiencia * Irradiancia (W/m²)
+            let potenciaW = areaPanel * eficienciaPanel * I;
+            
+            // Convertir la potencia a Kilovatios (kW)
+            const potenciakW = potenciaW / 1000;
+
+            let mensaje = "";
+            let color = "green";
+
+            if (I < 10) {
+                mensaje = "Noche o condiciones extremadamente nubladas. Generación nula.";
+                color = "gray";
+            } else if (I < 300) {
+                mensaje = "Día muy nublado o anochecer. Baja generación.";
+                color = "orange";
+            } else if (I < 800) {
+                mensaje = "Día parcialmente nublado o condiciones normales fuera del mediodía.";
+                color = "blue";
+            } else {
+                mensaje = "Condiciones óptimas: Sol brillante.";
+                color = "green";
+            }
+
+            resultadoDiv.innerHTML = `<p><strong>Irradiancia:</strong> ${I} W/m²</p>
+                                      <p><strong>Potencia Producida:</strong> <strong>${potenciakW.toFixed(2)} kW</strong></p>
+                                      <p style="color: ${color}; font-size: 0.9em;">${mensaje}</p>`;
+        }
+
+        function controlarAnimacion(I) {
+            // Controla la VISIBILIDAD de los fotones (simulando intensidad)
+            // Usamos la irradiancia como factor de opacidad.
+
+            photonElements.forEach(photon => {
+                // Opacidad basada en I/1000 (ej: 500 W/m² -> opacidad 0.5)
+                const opacity = I / 1000;
+                photon.style.opacity = opacity > 0.1 ? opacity : 0;
+            });
+
+            // Controla la VELOCIDAD de los electrones (simulando corriente)
+            // La corriente (y la velocidad de electrones) es directamente proporcional a la Irradiancia (I)
+            
+            const maxDuration = 3; // Duración máxima (más lento) en segundos
+            const minDuration = 0.5; // Duración mínima (más rápido) en segundos
+            
+            // Mapeamos I (0 a 1000) a Duración (3s a 0.5s)
+            // (1000 - I) / 1000 * (maxDuration - minDuration) + minDuration
+            let newDuration = ((1000 - I) / 1000) * (maxDuration - minDuration) + minDuration;
+            
+            // Asegurarse de que la duración no baje del mínimo
+            newDuration = Math.max(minDuration, Math.min(maxDuration, newDuration)); 
+            
+            if (I < 10) {
+                // Si la irradiancia es casi cero (noche), detener el movimiento
+                electronElements.forEach(e => e.style.animationPlayState = 'paused');
+            } else {
+                electronElements.forEach(electron => {
+                    electron.style.animationPlayState = 'running';
+                    // Aplicar la nueva duración de la animación
+                    electron.style.animationDuration = `${newDuration}s`; 
+                });
+            }
+        }
+
+        function actualizarSimulador(IString) {
+            const I = parseFloat(IString);
+            irradianciaValorSpan.textContent = I;
+
+            // 1. Calcular Potencia y mostrar resultado
+            calcularPotencia(I);
+            
+            // 2. Controlar las animaciones
+            controlarAnimacion(I);
+        }
+
+        // Inicializar el simulador al cargar la página con el valor por defecto (1000 W/m²)
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialI = irradianciaInput.value;
+            actualizarSimulador(initialI);
+        });
+    </script>
+</body>
+</html>
